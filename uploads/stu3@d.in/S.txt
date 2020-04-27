@@ -1,0 +1,82 @@
+import cv2
+import numpy as np
+
+digits = cv2.imread("digits.png", cv2.IMREAD_GRAYSCALE)
+digits=cv2.bitwise_not(digits)
+#cv2.imshow('inverted_digits',digits)
+rows = np.vsplit(digits, 50)
+cells = []
+for row in rows:
+    row_cells = np.hsplit(row, 50)
+    for cell in row_cells:
+        cell = cell.flatten()
+        cells.append(cell)
+height,width =int(np.shape(digits)[0]/50),int(np.shape(digits)[1]/50)
+
+white_cell=np.zeros((height,width),dtype=np.float32)
+white_cell[:][:]=250
+white_cell=white_cell.flatten()
+
+for x in range(250):
+    cells.append(white_cell)
+   
+
+cells = np.array(cells, dtype=np.float32)
+
+k = np.arange(11)
+
+cells_labels = np.repeat(k, 250)
+
+# KNN
+knn = cv2.ml.KNearest_create()
+knn.train(cells, cv2.ml.ROW_SAMPLE, cells_labels)
+
+'''
+test_digits = cv2.imread("test_digits.png", cv2.IMREAD_GRAYSCALE)
+test_digits = np.vsplit(test_digits, 50)
+test_cells = []
+for d in test_digits:
+    
+    d = d.flatten()
+    test_cells.append(d)
+test_cells = np.array(test_cells, dtype=np.float32)
+##
+'''
+
+test_digits = cv2.imread("maze00.jpg", cv2.IMREAD_GRAYSCALE)
+print(np.shape(test_digits))
+trows = np.vsplit(test_digits, 10)
+test_cells = []
+xcount=0
+CELL_SIZE=40
+kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
+
+for trow in trows:
+    ycount=0
+    row_cells = np.hsplit(trow, 10)
+    for cell in row_cells:
+        cell=cell[6:CELL_SIZE-6,6:CELL_SIZE-6]
+        cell=cv2.resize(cell,(width,width),interpolation=cv2.INTER_AREA)
+        dilation = cv2.dilate(cell, kernel, iterations = 1)
+        cv2.imshow('sample'+str(xcount)+str(ycount),cell)
+        cell = cell.flatten()
+        test_cells.append(cell)
+        ycount=ycount+1
+    xcount=xcount+1
+print(test_cells[0])
+test_cells = np.array(test_cells, dtype=np.float32)
+
+'''
+print(np.shape(cells),cells)
+print('###########')
+print(np.shape(test_cells),test_cells)
+print(np.shape(digits))
+'''
+#cv2.imshow('samplesrow',trows[0])
+cv2.waitKey()
+cv2.destroyAllWindows()
+##
+print(test_cells[11])
+ret, result, neighbours, dist = knn.findNearest(test_cells, k=3)
+print(result)
+
